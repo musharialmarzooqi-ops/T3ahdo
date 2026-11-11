@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // غيّر هذا البريد لبريد حساب المسؤول اللي سوّيته في Authentication
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'mushari.almarzooqi@gmail.com';
+    }
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // تسجيل كل مشارك: يشوفه ويعدّله صاحبه بس، والمسؤول يشوف الكل
+    match /regs/{uid} {
+      allow read, write: if isAdmin() || isSelf(uid);
+    }
+
+    // أرقام الإنجاز الجماعي (بدون أسماء): الكل يقرأ، وكل شخص يكتب رقمه بس
+    match /tally/{uid} {
+      allow read: if true;
+      allow write: if isAdmin() || isSelf(uid);
+    }
+
+    // الإعلانات: الكل يقرأ، والمسؤول بس ينشر
+    match /ann/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
